@@ -9,8 +9,8 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests  
 
 
-START_DATE = '2010-01-01'
-END_DATE = '2022-12-31'
+START_DATE = '2016-01-01'
+END_DATE = '2026-02-3'
 NEWS_API_KEY = '8d61da2584bf42b8a4b6a9f58afb8660' 
 
 st.title('Stock Trend Prediction with News Sentiment Analysis')
@@ -38,7 +38,7 @@ train_size = st.sidebar.slider('Training Data Size (%)', 50, 90, 70)
 df = yf.download(user_input, start=START_DATE, end=END_DATE)
 
 
-st.subheader('Data from 2010 - 2022')
+st.subheader('Data from 2016 - 2026')
 st.write(df.describe())
 
 current_stock = yf.Ticker(user_input)
@@ -109,6 +109,34 @@ y_predicted = model.predict(x_test)
 scale_factor = 1 / scaler.scale_[0]
 y_predicted = y_predicted * scale_factor
 y_test = y_test * scale_factor
+
+
+
+last_close_price = float(df['Close'].iloc[-1])
+
+
+
+last_close_price = float(df['Close'].iloc[-1])
+
+last_100_days = final_df.tail(100).values
+last_100_days_scaled = scaler.transform(last_100_days)
+
+X_next = last_100_days_scaled.reshape(1, 100, 1)
+next_day_scaled = model.predict(X_next)
+
+next_day_price = float(next_day_scaled[0][0] * (1 / scaler.scale_[0]))
+
+will_go_up = next_day_price > last_close_price
+
+st.sidebar.subheader("Next Day Direction")
+
+if will_go_up:
+    st.sidebar.success("📈 Price is likely to move higher tomorrow")
+else:
+    st.sidebar.error("📉 Price may remain flat or move lower tomorrow")
+
+
+
 
 st.subheader('Predicted vs Original Prices')
 fig2 = plt.figure(figsize=(12, 6), facecolor='black')
