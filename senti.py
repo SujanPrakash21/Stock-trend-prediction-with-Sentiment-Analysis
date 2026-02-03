@@ -94,7 +94,7 @@ model = load_model('keras_model.h5')
 
 past_100_days = data_training.tail(100)
 final_df = pd.concat([past_100_days, data_testing], ignore_index=True)
-input_data = scaler.fit_transform(final_df)
+input_data = scaler.transform(final_df)
 
 x_test = []
 y_test = []
@@ -116,24 +116,40 @@ last_close_price = float(df['Close'].iloc[-1])
 
 
 
+
+
+
 last_close_price = float(df['Close'].iloc[-1])
 
+
 last_100_days = final_df.tail(100).values
+
+
 last_100_days_scaled = scaler.transform(last_100_days)
 
+
 X_next = last_100_days_scaled.reshape(1, 100, 1)
+
+
 next_day_scaled = model.predict(X_next)
 
-next_day_price = float(next_day_scaled[0][0] * (1 / scaler.scale_[0]))
 
-will_go_up = next_day_price > last_close_price
+next_day_price = scaler.inverse_transform(
+    np.array([[next_day_scaled[0][0]]])
+)[0][0]
+
+price_diff = next_day_price - last_close_price
+pct_change = (price_diff / last_close_price) * 100
 
 st.sidebar.subheader("Next Day Direction")
 
-if will_go_up:
-    st.sidebar.success("📈 Price is likely to move higher tomorrow")
+if pct_change > 0.3:
+    st.sidebar.success(f"📈 Likely to move UP (+{pct_change:.2f}%)")
+elif pct_change < -0.3:
+    st.sidebar.error(f"📉 Likely to move DOWN ({pct_change:.2f}%)")
 else:
-    st.sidebar.error("📉 Price may remain flat or move lower tomorrow")
+    st.sidebar.warning(f"➖ Likely to remain FLAT ({pct_change:.2f}%)")
+
 
 
 
@@ -191,5 +207,5 @@ if st.sidebar.button('Analyze News Sentiment'):
 
 
 st.sidebar.subheader('About')
-st.sidebar.markdown('<span style="color:black;">This application allows you to predict stock trends based on historical data and analyze sentiment from news sources. You can adjust the training data size for analysis.</span>', unsafe_allow_html=True)
+st.sidebar.markdown('<span style="color:white;">This application allows you to predict stock trends based on historical data and analyze sentiment from news sources. You can adjust the training data size for analysis.</span>', unsafe_allow_html=True)
 
